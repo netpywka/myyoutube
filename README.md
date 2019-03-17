@@ -1,2 +1,6 @@
 # myyoutube
-My youtube
+myyoutube
+
+`$ brew install clojure`
+
+`$ clj -A:dev`
