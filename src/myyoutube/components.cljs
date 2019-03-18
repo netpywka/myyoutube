@@ -8,3 +8,8 @@
 (defn button [{:keys [on-press]} label]
   [:div {:style {:background-color :lightblue :cursor :pointer :display :flex :flex-direction :column}
          :on-click on-press} label])
+
+(defn touchable [{:keys [on-press]} & items]
+  (vec (concat [:div {:style {:cursor :pointer}
+                      :on-click on-press}]
+               (vec items))))

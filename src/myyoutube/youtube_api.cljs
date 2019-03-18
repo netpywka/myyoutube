@@ -16,12 +16,12 @@
              #js {"mine" "true"
                   "part" "snippet,contentDetails"
                   "maxResults" "50"})
-      (.then #(re-frame/dispatch [:set :api (js->clj % :keywordize-keys true)]))))
+      (.then #(re-frame/dispatch [:set-in [:api :subscriptions] (get-in (js->clj % :keywordize-keys true) [:result :items])]))))
 
-(defn popular []
+(defn popular [code]
   (-> (.list gapi.client.youtube.videos
              #js {"chart" "mostPopular"
-                  "regionCode" "RU"
+                  "regionCode" code
                   "part" "snippet"
                   "maxResults" "50"})
-      (.then #(re-frame/dispatch [:set :pop-api (js->clj % :keywordize-keys true)]))))
+      (.then #(re-frame/dispatch [:set-in [:api :popular code] (get-in (js->clj % :keywordize-keys true) [:result :items])]))))

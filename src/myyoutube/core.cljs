@@ -9,7 +9,9 @@
   (reagent/render [views/main-view] (js/document.getElementById "app")))
 
 (defn ^:export updateSigninStatus [signed-in?]
-  (re-frame/dispatch [:set :signed-in? signed-in?]))
+  (re-frame/dispatch [:set :signed-in? signed-in?])
+  (when signed-in?
+    (re-frame/dispatch [:get-api])))
 
 (defn ^:export init []
   (re-frame/dispatch-sync [:initialize-db])

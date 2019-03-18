@@ -1,9 +1,14 @@
-{:deps {org.clojure/clojure {:mvn/version "1.9.0"}
-        org.clojure/clojurescript {:mvn/version "1.10.339"}
-        com.bhauman/figwheel-main {:mvn/version "0.2.0"}
-        com.bhauman/rebel-readline-cljs {:mvn/version "0.1.4"}
-        reagent {:mvn/version "0.8.1"}
-        re-frame {:mvn/version "0.10.6"}}
- :paths ["src" "resources" "target"]
- :aliases {:dev {:extra-deps {re-frisk {:mvn/version "0.5.4.1"}}
-                 :main-opts ["-m" "figwheel.main" "-b" "dev" "-r"]}}}
+{:deps    {org.clojure/clojure             {:mvn/version "1.10.0"}
+           org.clojure/clojurescript       {:mvn/version "1.10.339"}
+           com.bhauman/figwheel-main       {:mvn/version "0.2.0"}
+           com.bhauman/rebel-readline-cljs {:mvn/version "0.1.4"}
+           reagent                         {:mvn/version "0.8.1"}
+           re-frame                        {:mvn/version "0.10.6"}}
+
+ :paths   ["src" "resources" "target"]
+
+ :aliases {:dev  {:extra-deps {re-frisk {:mvn/version "0.5.4.1"}}
+                  :main-opts  ["-m" "figwheel.main" "-b" "dev" "-r"]}
+
+           :prod {:main-opts ["-m" "cljs.main" "-o" "resources/public/js/main.js" "-d" "target/public/out"
+                              "-O" "advanced" "-c" "myyoutube.core"]}}}
