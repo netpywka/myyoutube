@@ -3,7 +3,8 @@
            com.bhauman/figwheel-main       {:mvn/version "0.2.0"}
            com.bhauman/rebel-readline-cljs {:mvn/version "0.1.4"}
            reagent                         {:mvn/version "0.8.1"}
-           re-frame                        {:mvn/version "0.10.6"}}
+           re-frame                        {:mvn/version "0.10.6"}
+           alandipert/storage-atom         {:mvn/version "2.0.1"}}
 
  :paths   ["src" "resources" "target"]
 
