@@ -5,6 +5,7 @@
     <meta content="ie=edge" http-equiv="x-ua-compatible" />
     <title>myyoutube</title>
     <meta content="width=device-width, initial-scale=1" name="viewport"/>
+    <link rel="shortcut icon" type="image/png" href="parsley.png"/>
     <style>
 
     @import url('https://rsms.me/inter/inter.css');
@@ -34,20 +35,7 @@
       myyoutube.core.init();
 
       function handleClientLoad() {
-        gapi.load('client:auth2', initClient);
-      }
-
-      function initClient() {
-        gapi.client.init({
-          discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/youtube/v3/rest"],
-          clientId: '',
-          scope: 'https://www.googleapis.com/auth/youtube.readonly'
-        }).then(function () {
-          // Listen for sign-in state changes.
-          gapi.auth2.getAuthInstance().isSignedIn.listen(myyoutube.core.updateSigninStatus);
-          // Handle the initial sign-in state.
-          myyoutube.core.updateSigninStatus(gapi.auth2.getAuthInstance().isSignedIn.get());
-        });
+        gapi.load('client:auth2', myyoutube.core.initClient);
       }
 </script>
 

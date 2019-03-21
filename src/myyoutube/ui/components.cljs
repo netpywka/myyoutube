@@ -1,4 +1,4 @@
-(ns myyoutube.components)
+(ns myyoutube.ui.components)
 
 (defn view [& items]
   (let [styles? (map? (first items))]
@@ -6,7 +6,7 @@
                  (vec (if styles? (rest items) items))))))
 
 (defn button [{:keys [on-press]} label]
-  [:div {:style {:background-color :lightblue :cursor :pointer :display :flex :flex-direction :column}
+  [:div {:style {:background-color :lightgreen :cursor :pointer :display :flex :flex-direction :column}
          :on-click on-press} label])
 
 (defn touchable [{:keys [on-press]} & items]

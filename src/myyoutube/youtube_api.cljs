@@ -1,15 +1,24 @@
 (ns myyoutube.youtube-api
   (:require [re-frame.core :as re-frame]))
 
+(defn auth-instance []
+  (.getAuthInstance js/gapi.auth2))
+
+(defn init [client-id update-sign-status]
+  (-> (.init js/gapi.client
+             (clj->js {:discoveryDocs ["https://www.googleapis.com/discovery/v1/apis/youtube/v3/rest"]
+                       :clientId      client-id
+                       :scope         "https://www.googleapis.com/auth/youtube.readonly"}))
+      (.then (fn []
+               (let [signed-in? (.-isSignedIn (auth-instance))]
+                 (.listen signed-in? update-sign-status)
+                 (update-sign-status (.get signed-in?)))))))
+
 (defn sing-in []
-  (-> js/gapi.auth2
-      .getAuthInstance
-      .signIn))
+  (.signIn (auth-instance)))
 
 (defn sing-out []
-  (-> js/gapi.auth2
-      .getAuthInstance
-      .signOut))
+  (.signOut (auth-instance)))
 
 (defn all-list [api params key items]
   (-> (.list api (clj->js params))
@@ -23,7 +32,7 @@
 (defn subscriptions []
   (all-list gapi.client.youtube.subscriptions
             {"mine"       "true"
-             "part"       "snippet,contentDetails"
+             "part"       "snippet"
              "maxResults" "50"}
             [:subscriptions]
             []))
@@ -32,7 +41,7 @@
   (all-list gapi.client.youtube.videos
             {"chart"      "mostPopular"
              "regionCode" code
-             "part"       "snippet"
+             "part"       "snippet,statistics"
              "maxResults" "50"}
             [:popular code]
             []))

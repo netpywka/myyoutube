@@ -1,12 +1,11 @@
-(ns myyoutube.views
+(ns myyoutube.ui.views
   (:require-macros [myyoutube.utils :refer [defview letsubs]])
-  (:require [myyoutube.components :as c]
+  (:require [myyoutube.ui.components :as c]
             [myyoutube.youtube-api :as api]
             [re-frame.core :as re-frame]))
 
 (defview popular [code]
   (letsubs [items [:popular-filtered code]]
-
     [c/view {:margin-right 10 :overflow :hidden}
      [:div "Popular ("code") videos: " (count items)]
      [c/view {:overflow-y :scroll :padding-right 15}
@@ -24,6 +23,8 @@
 
 (defview main-view []
   (letsubs [signed-in? [:get :signed-in?]
+            client-id [:get :client-id]
+            initialized? [:get :initialized]
             filter [:filter]]
     [c/view {:flex 1 :margin 10}
      (if signed-in?
@@ -36,4 +37,9 @@
          [popular "US"]
          [c/view {:margin-top 10 :margin-bottom 10} "Blocked channels: " (count filter)]]]
        [c/view {:align-items :center :justify-content :center :flex 1}
-          [c/button {:on-press #(api/sing-in)} "Sign in!"]])]))
+        (if initialized?
+          [c/button {:on-press #(api/sing-in)} "Sign in!"]
+          [c/view {:flex-direction :row}
+           [:input {:type :text :placeholder "Goodle API CLIENT ID"
+                    :on-change #(re-frame/dispatch [:set :client-id (.-value (.-target %))])}]
+           [c/button {:on-press #(re-frame/dispatch [:init-client])} "Init client"]])])]))
