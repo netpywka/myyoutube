@@ -11,5 +11,5 @@
  :aliases {:dev  {:extra-deps {re-frisk {:mvn/version "0.5.4.1"}}
                   :main-opts  ["-m" "figwheel.main" "-b" "dev" "-r"]}
 
-           :prod {:main-opts ["-m" "cljs.main" "-o" "resources/public/js/main.js" "-d" "target/public/out"
+           :prod {:main-opts ["-m" "cljs.main" "-co" "prod.cljs.edn" "-o" "resources/public/js/main.js" "-d" "target/public/out"
                               "-O" "advanced" "-c" "myyoutube.core"]}}}

@@ -30,7 +30,7 @@
                   (re-frame/dispatch [:set-in (concat [:api] key) items]))))))
 
 (defn subscriptions []
-  (all-list gapi.client.youtube.subscriptions
+  (all-list js/gapi.client.youtube.subscriptions
             {"mine"       "true"
              "part"       "snippet"
              "maxResults" "50"}
@@ -38,7 +38,7 @@
             []))
 
 (defn popular [code]
-  (all-list gapi.client.youtube.videos
+  (all-list js/gapi.client.youtube.videos
             {"chart"      "mostPopular"
              "regionCode" code
              "part"       "snippet,statistics"
