@@ -1,7 +1,8 @@
 (ns myyoutube.ui.events
   (:require [re-frame.core :as re-frame]
             [myyoutube.youtube-api :as api]
-            [myyoutube.local-storage :as ls]))
+            [myyoutube.local-storage :as ls]
+            [clojure.string :as string]))
 
 ;;COFX
 
@@ -74,6 +75,13 @@
    (let [db' (update db :filter conj channel-id)]
      {:db db'
       :store [:filters (:filter db')]})))
+
+(re-frame/reg-event-fx
+ :save-filters
+ (fn [{{:keys [filters-edit] :as db} :db} _]
+   (let [filters (string/split filters-edit #" ")]
+     {:db (assoc db :filter filters)
+      :store [:filters filters]})))
 
 (defn update-sign-status [signed-in?]
   (re-frame/dispatch [:set :signed-in? signed-in?])
