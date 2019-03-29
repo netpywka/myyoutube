@@ -66,8 +66,8 @@
 (re-frame/reg-event-fx
  :get-api
  (fn [_ _]
-   {:api-get-popular       nil}))
-    ;:api-get-subscriptions nil}))
+   {:api-get-popular       nil
+    :api-get-subscriptions nil}))
 
 (re-frame/reg-event-fx
  :block-channel

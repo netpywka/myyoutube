@@ -1,5 +1,7 @@
 (ns myyoutube.ui.subs
-  (:require [re-frame.core :as re-frame]))
+  (:require [re-frame.core :as re-frame]
+            [cljs-time.format :as format]
+            [cljs-time.core :as time]))
 
 (re-frame/reg-sub
  :get
@@ -31,3 +33,20 @@
      popular
      (let [filter (set filter)]
        (remove #(filter (get-in % [:snippet :channelId])) popular)))))
+
+(re-frame/reg-sub :api :api)
+
+(re-frame/reg-sub
+ :subscriptions
+ :<- [:api]
+ (fn [api _]
+   (get api :subscriptions)))
+
+(re-frame/reg-sub
+ :sorted-subscriptions
+ :<- [:subscriptions]
+ (fn [subscriptions _]
+   (sort-by #(format/parse (format/formatters :date-time)
+                           (get-in % [:snippet :publishedAt]))
+            time/after?
+            subscriptions)))

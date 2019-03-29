@@ -6,7 +6,9 @@
                  (vec (if styles? (rest items) items))))))
 
 (defn button [{:keys [on-press style]} label]
-  [:div {:style (merge {:background-color :lightgreen :cursor :pointer :display :flex :flex-direction :column} style)
+  [:div {:style (merge {:background-color "#9ccc7a" :cursor :pointer :display :flex :flex-direction :column
+                        :border-radius "4px" :padding 5 :color "#467013"}
+                       style)
          :on-click on-press} label])
 
 (defn touchable [{:keys [on-press]} & items]
