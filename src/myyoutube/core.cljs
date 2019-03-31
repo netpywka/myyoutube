@@ -10,7 +10,6 @@
 
 (defn ^:export init []
   (re-frame/dispatch-sync [:initialize-db])
-  (re-frame/dispatch [:initialize])
   (mount-root))
 
 (defn ^:export initClient []

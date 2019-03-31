@@ -21,20 +21,16 @@
  (fn [api [_ path]]
    (get-in api path)))
 
-(re-frame/reg-sub :filter :filter)
-
 (re-frame/reg-sub
  :popular-filtered
  (fn [[_ code] _]
    [(re-frame/subscribe [:get-api-by-code [:popular code]])
-    (re-frame/subscribe [:filter])])
+    (re-frame/subscribe [:storage/filter])])
  (fn [[popular filter] _]
    (if (empty? filter)
      popular
      (let [filter (set filter)]
        (remove #(filter (get-in % [:snippet :channelId])) popular)))))
-
-(re-frame/reg-sub :api :api)
 
 (re-frame/reg-sub
  :subscriptions
@@ -50,3 +46,15 @@
                            (get-in % [:snippet :publishedAt]))
             time/after?
             subscriptions)))
+
+(re-frame/reg-sub
+ :color
+ :<- [:storage/bg]
+ (fn [bg _]
+   (if bg :black :white)))
+
+(re-frame/reg-sub
+ :oppo-color
+ :<- [:storage/bg]
+ (fn [bg _]
+   (if bg :white :black)))

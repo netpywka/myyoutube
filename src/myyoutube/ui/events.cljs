@@ -2,19 +2,10 @@
   (:require [re-frame.core :as re-frame]
             [myyoutube.youtube-api :as api]
             [myyoutube.local-storage :as ls]
-            [clojure.string :as string]))
+            [clojure.string :as string]
+            [myyoutube.ui.db :as db]))
 
 ;;COFX
-
-(re-frame/reg-cofx
- :get-filters-from-storage
- (fn [cofx _]
-   (assoc cofx :filters (ls/get-from-storage :filters))))
-
-(re-frame/reg-cofx
- :get-client-id-from-storage
- (fn [cofx _]
-   (assoc cofx :client-id (ls/get-from-storage :client-id))))
 
 ;;FX
 
@@ -25,9 +16,8 @@
 
 (re-frame/reg-fx
  :api-get-popular
- (fn []
-   (api/popular "RU")
-   (api/popular "US")))
+ (fn [code]
+   (api/popular code)))
 
 (re-frame/reg-fx
  :api-get-subscriptions
@@ -35,23 +25,17 @@
    (api/subscriptions)))
 
 (re-frame/reg-fx
- :store
- (fn [[key value]]
-   (ls/save key value)))
+ :refresh-page
+ (fn []
+   (.reload js/location)))
 
 ;;EVENTS
 
-(re-frame/reg-event-db
- :initialize-db
- (fn [_ _]
-   {:signed-in? false}))
-
 (re-frame/reg-event-fx
- :initialize
- [(re-frame/inject-cofx :get-filters-from-storage)
-  (re-frame/inject-cofx :get-client-id-from-storage)]
- (fn [{db :db filters :filters client-id :client-id} _]
-   {:db (assoc db :filter filters :client-id client-id)}))
+ :initialize-db
+ [(ls/persist-db-keys db/storage-key db/store-keys)]
+ (fn [_ _]
+   {:db db/app-db}))
 
 (re-frame/reg-event-db
  :set
@@ -64,34 +48,73 @@
    (assoc-in db path v)))
 
 (re-frame/reg-event-fx
- :get-api
+ :get-popular
+ (fn [_ [_ code]]
+   {:api-get-popular code}))
+
+(re-frame/reg-event-fx
+ :get-subscriptions
  (fn [_ _]
-   {:api-get-popular       nil
-    :api-get-subscriptions nil}))
+   {:api-get-subscriptions nil}))
+
+(re-frame/reg-event-fx
+ :get-api
+ (fn [{db :db} _]
+   (let [{:keys [items]} (ls/get-storage db)]
+     {:dispatch-n (for [{:keys [type country]} items]
+                    (case type
+                      :popular [:get-popular country]
+                      :subscriptions [:get-subscriptions]))})))
 
 (re-frame/reg-event-fx
  :block-channel
  (fn [{db :db} [_ channel-id]]
-   (let [db' (update db :filter conj channel-id)]
-     {:db db'
-      :store [:filters (:filter db')]})))
+   {:db (update-in db [db/storage-key :filter] conj channel-id)}))
 
 (re-frame/reg-event-fx
  :save-filters
- (fn [{{:keys [filters-edit] :as db} :db} _]
-   (let [filters (string/split filters-edit #" ")]
-     {:db (assoc db :filter filters)
-      :store [:filters filters]})))
+ (fn [{{:keys [settings-form] :as db} :db} _]
+   (let [filters-edit (get-in settings-form [:data :filter])
+         filter (string/split filters-edit #" ")]
+     {:db (-> (ls/update-storage db :filter filter)
+              (assoc :settings-form nil))})))
 
 (defn update-sign-status [signed-in?]
   (re-frame/dispatch [:set :signed-in? signed-in?])
-  (re-frame/dispatch [:set :initialized true])
+  (re-frame/dispatch [:set :initialized? true])
   (when signed-in?
     (re-frame/dispatch [:get-api])))
 
 (re-frame/reg-event-fx
  :init-client
- (fn [{{:keys [client-id]} :db} _]
-   (when client-id
-     {:store [:client-id client-id]
-      :init-gapi [client-id update-sign-status]})))
+ (fn [{db :db} _]
+   (let [{:keys [client-id]} (ls/get-storage db)]
+     (when client-id
+       {:init-gapi [client-id update-sign-status]}))))
+
+(re-frame/reg-event-fx
+ :refresh-client
+ (fn [{db :db} _]
+   {:db (ls/update-storage db :client-id nil)
+    :refresh-page nil}))
+
+(re-frame/reg-event-fx
+ :add-new
+ (fn [{{:keys [settings-form] :as db} :db} _]
+   (let [{:keys [type country]} (:data settings-form)]
+     (merge {:db (-> (update-in db [db/storage-key :items] conj (merge {:type type} (when country {:country country})))
+                     (assoc :settings-form nil))}
+            (case type
+              :popular {:api-get-popular country}
+              :subscriptions {:api-get-subscriptions nil})))))
+
+(re-frame/reg-event-fx
+ :delete-item
+ (fn [{{:keys [settings-form] :as db} :db} _]
+   (let [{:keys [type country]} (:data settings-form)
+         items (get-in db [db/storage-key :items])]
+     {:db (-> (assoc-in db [db/storage-key :items] (remove #(if (= :popular type)
+                                                              (and (= type (:type %)) (= country (:country %)))
+                                                              (= type (:type %)))
+                                                           items))
+              (assoc :settings-form nil))})))

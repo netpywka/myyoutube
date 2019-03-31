@@ -23,13 +23,13 @@
 (defn sing-out []
   (.signOut (auth-instance)))
 
-(defn all-list [api params items callback]
+(defn all-list [api params items callback once?]
   (-> (.list api (clj->js params))
       (.then #(let [{:keys [result]} (js->clj % :keywordize-keys true)
                     {:keys [nextPageToken]} result
                     items (into [] (concat items (:items result)))]
-                (if nextPageToken
-                  (all-list api (assoc params "pageToken" nextPageToken) items callback)
+                (if (and nextPageToken (not once?))
+                  (all-list api (assoc params "pageToken" nextPageToken) items callback once?)
                   (callback items))))))
 
 (defn load-videos [items]
@@ -38,14 +38,17 @@
              "part" "snippet"}
             []
             (fn [videos]
-              (re-frame/dispatch [:set-in [:api :subscriptions] videos]))))
+              (re-frame/dispatch [:set-in [:api :subscriptions] videos]))
+            true))
 
 (defn prepare-list [channel-id contentDetails]
   (.list js/gapi.client.youtube.playlistItems #js {"playlistId" (str "UU" (subs channel-id 2))
-                                                   "maxResults" (str (:newItemCount contentDetails))
+                                                   "maxResults" 5;(str (:newItemCount contentDetails))
                                                    "part"       "contentDetails"}))
 
 (defn load-channels [items]
+  (re-frame/dispatch [:set-in [:api :subscriptions-items] items])
+  (println "items" (count items))
   (-> (let [batch (js/gapi.client.newBatch.)]
         (doseq [{:keys [snippet contentDetails]} items]
           (let [channel-id (get-in snippet [:resourceId :channelId])]
@@ -69,12 +72,12 @@
 (defn subscriptions []
   (all-list js/gapi.client.youtube.subscriptions
             {"mine"       "true"
-             "part"       "snippet,contentDetails"
-             "maxResults" "50"}
+             "part"       "snippet"
+             "order"      "relevance"
+             "maxResults" "15"}
             []
-            (fn [items]
-              ;; load only channels which has new items
-              (load-channels (filter #(not (zero? (get-in % [:contentDetails :newItemCount]))) items)))))
+            load-channels
+            true))
 
 (defn popular [code]
   (all-list js/gapi.client.youtube.videos
@@ -83,4 +86,5 @@
              "part"       "snippet"
              "maxResults" "50"}
             []
-            #(re-frame/dispatch [:set-in [:api :popular code] %])))
+            #(re-frame/dispatch [:set-in [:api :popular code] %])
+            false))
