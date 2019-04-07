@@ -13,8 +13,5 @@ Production
 
 `$ clj -A:prod`
 
-Progress
-- popular videos
-- block channels
 
 ![Image](resources/myyoutube.png)

@@ -3,7 +3,9 @@
             [myyoutube.youtube-api :as api]
             [myyoutube.local-storage :as ls]
             [clojure.string :as string]
-            [myyoutube.ui.db :as db]))
+            [myyoutube.ui.db :as db]
+            [cljs-time.core :as time]
+            [cljs-time.format :as format]))
 
 ;;COFX
 
@@ -25,15 +27,25 @@
    (api/subscriptions)))
 
 (re-frame/reg-fx
+ :api-get-channels
+ (fn [[id channels]]
+   (api/channels id channels)))
+
+(re-frame/reg-fx
  :refresh-page
  (fn []
    (.reload js/location)))
+
+(re-frame/reg-fx
+ :open-video-fx
+ (fn [id]
+   (.open js/window (str "https://www.youtube.com/watch?v=" id) "_blank")))
 
 ;;EVENTS
 
 (re-frame/reg-event-fx
  :initialize-db
- [(ls/persist-db-keys db/storage-key db/store-keys)]
+ [(ls/persist-db-keys db/storage-key db/store-keys db/default-values)]
  (fn [_ _]
    {:db db/app-db}))
 
@@ -58,13 +70,26 @@
    {:api-get-subscriptions nil}))
 
 (re-frame/reg-event-fx
+ :get-channels
+ (fn [_ [_ id channels]]
+   {:api-get-channels [id channels]}))
+
+(re-frame/reg-event-fx
  :get-api
  (fn [{db :db} _]
    (let [{:keys [items]} (ls/get-storage db)]
-     {:dispatch-n (for [{:keys [type country]} items]
-                    (case type
-                      :popular [:get-popular country]
-                      :subscriptions [:get-subscriptions]))})))
+     {:dispatch-n (for [{:keys [type country refresh? id channels]} items]
+                    (when refresh?
+                      (case type
+                        :popular [:get-popular country]
+                        :subscriptions [:get-channels id channels])))})))
+
+(re-frame/reg-event-fx
+ :get-api-for-item
+ (fn [_ [_ {:keys [type country id channels]}]]
+   {:dispatch (case type
+                :popular [:get-popular country]
+                :subscriptions [:get-channels id channels])}))
 
 (re-frame/reg-event-fx
  :block-channel
@@ -75,7 +100,7 @@
  :save-filters
  (fn [{{:keys [settings-form] :as db} :db} _]
    (let [filters-edit (get-in settings-form [:data :filter])
-         filter (string/split filters-edit #" ")]
+         filter       (string/split filters-edit #" ")]
      {:db (-> (ls/update-storage db :filter filter)
               (assoc :settings-form nil))})))
 
@@ -95,26 +120,70 @@
 (re-frame/reg-event-fx
  :refresh-client
  (fn [{db :db} _]
-   {:db (ls/update-storage db :client-id nil)
+   {:db           (ls/update-storage db :client-id nil)
     :refresh-page nil}))
+
+(defn rand-str [len]
+  (apply str (take len (repeatedly #(char (+ (rand 26) 65))))))
 
 (re-frame/reg-event-fx
  :add-new
  (fn [{{:keys [settings-form] :as db} :db} _]
-   (let [{:keys [type country]} (:data settings-form)]
-     (merge {:db (-> (update-in db [db/storage-key :items] conj (merge {:type type} (when country {:country country})))
+   (let [{:keys [type country name dont-refresh? compact? channels]} (:data settings-form)
+         id (str name "-" (rand-str 5))]
+     (merge {:db (-> (update-in db [db/storage-key :items] conj
+                                (merge {:id       id :type type :name name
+                                        :refresh? (not dont-refresh?) :compact? compact?}
+                                       (when channels {:channels (keys channels)})
+                                       (when country {:country country})))
                      (assoc :settings-form nil))}
             (case type
               :popular {:api-get-popular country}
-              :subscriptions {:api-get-subscriptions nil})))))
+              :subscriptions {:api-get-channels [id (keys channels)]})))))
 
 (re-frame/reg-event-fx
  :delete-item
  (fn [{{:keys [settings-form] :as db} :db} _]
-   (let [{:keys [type country]} (:data settings-form)
+   (let [{:keys [id]} (:data settings-form)
          items (get-in db [db/storage-key :items])]
-     {:db (-> (assoc-in db [db/storage-key :items] (remove #(if (= :popular type)
-                                                              (and (= type (:type %)) (= country (:country %)))
-                                                              (= type (:type %)))
+     {:db (-> (assoc-in db [db/storage-key :items] (remove #(= id (:id %))
                                                            items))
               (assoc :settings-form nil))})))
+
+(defn curr-time-pt []
+  (time/minus (time/now) (time/hours 7)))
+
+(re-frame/reg-event-fx
+ :init-quota
+ (fn [{db :db} _]
+   (when-let [last-time (get-in db [db/storage-key :quota :time])]
+     (let [last-time (format/parse (format/formatters :date-time) last-time)
+           cur-time  (curr-time-pt)
+           mid-night (time/today-at-midnight)]
+       (when (and (time/before? last-time mid-night)
+                  (time/after? cur-time mid-night))
+         {:db (assoc-in db [db/storage-key :quota] nil)})))))
+
+(re-frame/reg-event-fx
+ :update-quota
+ (fn [{db :db} [_ quota]]
+   (let [cur-quota (get-in db [db/storage-key :quota :number])]
+     {:db (assoc-in db [db/storage-key :quota] {:time   (format/unparse (format/formatters :date-time) (curr-time-pt))
+                                                :number (+ quota cur-quota)})})))
+
+(re-frame/reg-event-fx
+ :check-subscriptions
+ (fn [{db :db} _]
+   (when-not (get-in db [:api :subscriptions])
+     {:api-get-subscriptions nil})))
+
+(re-frame/reg-event-fx
+ :subscription-item
+ (fn [{db :db} [_ ch-id selected?]]
+   {:db (update-in db [:settings-form :data :channels] (if selected? assoc dissoc) ch-id "")}))
+
+(re-frame/reg-event-fx
+ :open-video
+ (fn [{db :db} [_ id]]
+   {:db            (update-in db [db/storage-key :seen] conj id)
+    :open-video-fx id}))

@@ -17,7 +17,7 @@
 (defn ->store [store-key data]
   (reset! (@storage-atoms store-key) data))
 
-(defn persist-db-keys [storage-key store-keys]
+(defn persist-db-keys [storage-key store-keys default-values]
   (register-stores storage-key store-keys)
   (re-frame/->interceptor
    :id "persist-db-keys"
@@ -31,8 +31,9 @@
              (fn [{db :db} [_ key data]]
                {:db (assoc-in db [storage-key key] data)}))
             (update-in context [:effects :db] merge {storage-key
-                                                     (into {} (for [store-key store-keys]
-                                                                {store-key (<-store store-key)}))}))))
+                                                     (into {} (map #(hash-map %1 (or (<-store %1) %2))
+                                                                   store-keys
+                                                                   default-values))}))))
 
 (defn get-storage [db]
   (get db @storage-key-atom))

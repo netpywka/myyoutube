@@ -6,9 +6,18 @@
             [myyoutube.ui.popup.views :as popup]
             [myyoutube.ui.items.views :as items]))
 
+(defview filter-view []
+  (letsubs [filter [:storage/filter]]
+    [c/button {:on-press #(re-frame/dispatch [:set :settings-form {:type :filters :title "Blocked channels"}])}
+     (count filter)]))
+
+(defview quota-view [oppo-color]
+  (letsubs [{:keys [number]} [:storage/quota]]
+    [c/view {:margin-top 10 :margin-bottom 10 :margin-left 20 :color oppo-color}
+     "Used quota: " (or number "0") " of 10000 / day"]))
+
 (defview main-view []
   (letsubs [client-id    [:storage/client-id]
-            filter       [:storage/filter]
             bg           [:storage/bg]
             signed-in?   [:get :signed-in?]
             initialized? [:get :initialized?]
@@ -21,10 +30,12 @@
         [c/view {:flex-direction :row :align-items :center}
          [:img {:src "parsley.png" :height 50}]
          [c/view {:margin-top 10 :margin-bottom 10 :margin-left 10 :color oppo-color} "Blocked channels: "]
-         [c/button {:on-press #(re-frame/dispatch [:set :settings-form {:type :filters}])} (count filter)]
+         [filter-view]
+         [quota-view oppo-color]
          [c/view {:flex 1}]
-         [c/button {:on-press #(re-frame/dispatch [:set :settings-form {:type :add-new
-                                                                        :data {:type :popular :country "AF"}}])
+         [c/button {:on-press #(re-frame/dispatch [:set :settings-form {:type  :add-new
+                                                                        :title "Add new"
+                                                                        :data  {:type :popular :country "AF"}}])
                     :style    {:margin-right 20}} "+"]
          [c/touchable {:on-press #(re-frame/dispatch [:set-in [:storage :bg] (not bg)])}
           [c/view {:flex         1 :background-color oppo-color :border-radius "4px" :padding 5 :color oppo-color
