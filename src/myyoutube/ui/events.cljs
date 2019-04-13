@@ -78,7 +78,7 @@
  :get-api
  (fn [{db :db} _]
    (let [{:keys [items]} (ls/get-storage db)]
-     {:dispatch-n (for [{:keys [type country refresh? id channels]} items]
+     {:dispatch-n (for [{:keys [type country refresh? id channels]} (vals items)]
                     (when refresh?
                       (case type
                         :popular [:get-popular country]
