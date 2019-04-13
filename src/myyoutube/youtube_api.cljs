@@ -15,7 +15,8 @@
       (.then (fn []
                (let [signed-in? (.-isSignedIn (auth-instance))]
                  (.listen signed-in? update-sign-status)
-                 (update-sign-status (.get signed-in?)))))))
+                 (update-sign-status (.get signed-in?)))))
+      (.catch #(re-frame/dispatch [:set :initialization-failed true]))))
 
 (defn sing-in []
   (.signIn (auth-instance)))
@@ -42,7 +43,7 @@
     :params   {"mine"       "true"
                "part"       "snippet"
                "maxResults" "50"}
-    :callback #(re-frame/dispatch [:set-in [:api :subscriptions] %])}))
+    :callback #(re-frame/dispatch [:store-subscriptions %])}))
 
 (defn popular [code]
   (request-all-list
@@ -52,7 +53,7 @@
                "regionCode" code
                "part"       "snippet"
                "maxResults" "50"}
-    :callback #(re-frame/dispatch [:set-in [:api :popular code] %])}))
+    :callback #(re-frame/dispatch [:store-api [:popular code] %])}))
 
 (defn channels [id items]
   (re-frame/dispatch [:update-quota (* (count items) 3)])
@@ -77,12 +78,11 @@
                                                            time/after?
                                                            last-week-videos)
                      video-ids                    (map #(get-in % [:contentDetails :videoId]) sorted-by-upload-time-videos)]
-                 (println video-ids)
                  (request-all-list
                   {:api      js/gapi.client.youtube.videos
                    :quota    3
                    :params   {"id"   (string/join "," (take 50 video-ids))
                               "part" "snippet"}
                    :callback (fn [videos]
-                               (re-frame/dispatch [:set-in [:api :playlists id] videos]))
+                               (re-frame/dispatch [:store-api [:playlists id] videos]))
                    :once?    true}))))))

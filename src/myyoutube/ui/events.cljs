@@ -100,7 +100,7 @@
  :save-filters
  (fn [{{:keys [settings-form] :as db} :db} _]
    (let [filters-edit (get-in settings-form [:data :filter])
-         filter       (string/split filters-edit #" ")]
+         filter       (set (string/split filters-edit #" "))]
      {:db (-> (ls/update-storage db :filter filter)
               (assoc :settings-form nil))})))
 
@@ -123,31 +123,37 @@
    {:db           (ls/update-storage db :client-id nil)
     :refresh-page nil}))
 
-(defn rand-str [len]
-  (apply str (take len (repeatedly #(char (+ (rand 26) 65))))))
-
 (re-frame/reg-event-fx
- :add-new
+ :save-item
  (fn [{{:keys [settings-form] :as db} :db} _]
-   (let [{:keys [type country name dont-refresh? compact? channels]} (:data settings-form)
-         id (str name "-" (rand-str 5))]
-     (merge {:db (-> (update-in db [db/storage-key :items] conj
-                                (merge {:id       id :type type :name name
-                                        :refresh? (not dont-refresh?) :compact? compact?}
-                                       (when channels {:channels (keys channels)})
-                                       (when country {:country country})))
+   (let [{:keys [id type country name dont-refresh? compact? channels]} (:data settings-form)
+         {:keys [items]} (ls/get-storage db)
+         id (or id (if (seq items) (inc (apply max (keys items))) 0))]
+     (merge {:db (-> (assoc-in db [db/storage-key :items id]
+                               (merge {:id       id :type type :name name
+                                       :refresh? (not dont-refresh?) :compact? compact?}
+                                      (when channels {:channels (keys channels)})
+                                      (when country {:country country})))
                      (assoc :settings-form nil))}
             (case type
               :popular {:api-get-popular country}
               :subscriptions {:api-get-channels [id (keys channels)]})))))
 
+(defn normalize-data [{:keys [refresh? channels] :as data}]
+  (assoc data :dont-refresh? (not refresh?) :channels (into {} (map #(hash-map % "") channels))))
+
+(re-frame/reg-event-fx
+ :edit-item
+ (fn [{db :db} [_ data]]
+   {:db (assoc db :settings-form {:type  :edit-item
+                                  :title "Edit"
+                                  :data  (normalize-data data)})}))
+
 (re-frame/reg-event-fx
  :delete-item
  (fn [{{:keys [settings-form] :as db} :db} _]
-   (let [{:keys [id]} (:data settings-form)
-         items (get-in db [db/storage-key :items])]
-     {:db (-> (assoc-in db [db/storage-key :items] (remove #(= id (:id %))
-                                                           items))
+   (let [{:keys [id]} (:data settings-form)]
+     {:db (-> (update-in db [db/storage-key :items] dissoc id)
               (assoc :settings-form nil))})))
 
 (defn curr-time-pt []
@@ -187,3 +193,28 @@
  (fn [{db :db} [_ id]]
    {:db            (update-in db [db/storage-key :seen] conj id)
     :open-video-fx id}))
+
+(re-frame/reg-event-fx
+  :store-subscriptions
+  (fn [{db :db} [_ items]]
+    {:db (assoc-in db
+                   [db/storage-key :api :subscriptions]
+                   (map (fn [value]
+                          {:title (get-in value [:snippet :title])
+                           :channel-id (get-in value [:snippet :resourceId :channelId])
+                           :thumb (get-in value [:snippet :thumbnails :default :url])})
+                        items))}))
+
+(re-frame/reg-event-fx
+ :store-api
+ (fn [{db :db} [_ path items]]
+   {:db (assoc-in db
+                  (into [] (concat [db/storage-key :api] path))
+                  (map (fn [value]
+                         {:id (get value :id)
+                          :published-at (get-in value [:snippet :publishedAt])
+                          :thumb (get-in value [:snippet :thumbnails :medium :url])
+                          :channel-title (get-in value [:snippet :channelTitle])
+                          :channel-id (get-in value [:snippet :channelId])
+                          :title  (get-in value [:snippet :title])})
+                       items))}))

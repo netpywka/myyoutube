@@ -13,11 +13,9 @@
  (fn [db [_ path]]
    (get-in db path)))
 
-(re-frame/reg-sub :api :api)
-
 (re-frame/reg-sub
  :get-api-by-code
- :<- [:api]
+ :<- [:storage/api]
  (fn [api [_ path]]
    (get-in api path)))
 
@@ -25,27 +23,29 @@
  :popular-filtered
  (fn [[_ code] _]
    [(re-frame/subscribe [:get-api-by-code [:popular code]])
-    (re-frame/subscribe [:storage/filter])
+    (re-frame/subscribe [:storage/filter])])
+ (fn [[popular filter ] _]
+   (if (empty? filter)
+     popular
+     (remove #(filter (:channel-id %)) popular))))
+
+(re-frame/reg-sub
+ :popular-filtered-seen
+ (fn [[_ code] _]
+   [(re-frame/subscribe [:popular-filtered code])
     (re-frame/subscribe [:storage/seen])])
- (fn [[popular filter seen] _]
-   (map #(assoc % :seen? (seen (:id %)))
-        (sort-by #(format/parse (format/formatters :date-time)
-                                (get-in % [:snippet :publishedAt]))
-                 time/after?
-                 (if (empty? filter)
-                   popular
-                   (let [filter (set filter)]
-                     (remove #(filter (get-in % [:snippet :channelId])) popular)))))))
+ (fn [[popular seen] _]
+   (map #(assoc % :seen? (seen (:id %))) popular)))
 
 (re-frame/reg-sub
  :subscriptions
- :<- [:api]
+ :<- [:storage/api]
  (fn [api _]
    (get api :subscriptions)))
 
 (re-frame/reg-sub
  :playlists
- :<- [:api]
+ :<- [:storage/api]
  (fn [api _]
    (get api :playlists)))
 
@@ -58,14 +58,20 @@
 (re-frame/reg-sub
  :sorted-playlists
  (fn [[_ id] _]
-   [(re-frame/subscribe [:playlists-videos id])
+   [(re-frame/subscribe [:playlists-videos id])])
+ (fn [[playlists] _]
+   (let [format (format/formatters :date-time)]
+     (sort-by #(format/parse format (:published-at %))
+              time/after?
+              playlists))))
+
+(re-frame/reg-sub
+ :sorted-playlists-seen
+ (fn [[_ id] _]
+   [(re-frame/subscribe [:sorted-playlists id])
     (re-frame/subscribe [:storage/seen])])
  (fn [[playlists seen] _]
-   (map #(assoc % :seen? (seen (:id %)))
-        (sort-by #(format/parse (format/formatters :date-time)
-                                (get-in % [:snippet :publishedAt]))
-                 time/after?
-                 playlists))))
+   (map #(assoc % :seen? (seen (:id %))) playlists)))
 
 (re-frame/reg-sub
  :color

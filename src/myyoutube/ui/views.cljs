@@ -17,14 +17,14 @@
      "Used quota: " (or number "0") " of 10000 / day"]))
 
 (defview main-view []
-  (letsubs [client-id    [:storage/client-id]
-            bg           [:storage/bg]
-            signed-in?   [:get :signed-in?]
-            initialized? [:get :initialized?]
-            color        [:color]
-            oppo-color   [:oppo-color]]
+  (letsubs [client-id             [:storage/client-id]
+            bg                    [:storage/bg]
+            signed-in?            [:get :signed-in?]
+            initialized?          [:get :initialized?]
+            initialization-failed [:get :initialization-failed]
+            color                 [:color]
+            oppo-color            [:oppo-color]]
     [c/view {:flex 1 :padding 10 :background-color color}
-     [popup/popup]
      (if signed-in?
        [c/view {:flex 1}
         [c/view {:flex-direction :row :align-items :center}
@@ -44,13 +44,20 @@
          [c/button {:on-press #(api/sing-out)} "Sign out"]]
         [items/items-view]]
        [c/view {:align-items :center :justify-content :center :flex 1}
-        (if initialized?
-          [c/button {:on-press #(api/sing-in)} "Sign in!"]
-          (if client-id
+        (if client-id
+          (if initialized?
             [c/view {:flex-direction :row :align-items :center}
-             ;;js/gapi.client may be called only once, so we need to refresh a page
              [c/button {:on-press #(re-frame/dispatch [:refresh-client])} "Use another CLIENT ID"]
              [c/view {:padding-right 5 :padding-left 5} " or "]
-             [c/button {:on-press #(re-frame/dispatch [:init-client])} "Init client"]]
-            [:input {:type      :text :placeholder "Paste Goodle API CLIENT ID here"
-                     :on-change #(re-frame/dispatch [:ls/store :client-id (.-value (.-target %))])}]))])]))
+             [c/button {:on-press #(api/sing-in)} "Sign in!"]]
+            (if initialization-failed
+              [c/view {:flex-direction :row :align-items :center}
+               ;;js/gapi.client may be called only once, so we need to refresh a page
+               [c/button {:on-press #(re-frame/dispatch [:refresh-client])} "Use another CLIENT ID"]
+               [c/view {:padding-right 5 :padding-left 5} " or "]
+               [c/button {:on-press #(re-frame/dispatch [:init-client])} "Init client"]]
+              [:img {:src "parsley.png" :height 150}]))
+          [:input {:type      :text :placeholder "Paste Goodle API CLIENT ID here"
+                   :on-change #(do (re-frame/dispatch [:ls/store :client-id (.-value (.-target %))])
+                                   (re-frame/dispatch [:set :initialization-failed true]))}])])
+     [popup/popup]]))
