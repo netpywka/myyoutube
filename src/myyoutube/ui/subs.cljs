@@ -84,3 +84,23 @@
  :<- [:storage/bg]
  (fn [bg _]
    (if bg :white :black)))
+
+
+(re-frame/reg-sub
+ :items-subs
+ :<- [:storage/items]
+ (fn [items _]
+   (->> items
+        vals
+        (filter #(= :subscriptions (:type %)))
+        (map #(update % :channels set)))))
+
+(defn get-items [id items]
+  (filter #(get (:channels %) id) items))
+
+(re-frame/reg-sub
+ :subs-with-items
+ :<- [:subscriptions]
+ :<- [:items-subs]
+ (fn [[subs items] _]
+   (map #(assoc % :items (get-items (:channel-id %) items)) subs)))

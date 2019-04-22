@@ -1,5 +1,5 @@
 # myyoutube
-myyoutube
+https://mytube.su/
 
 
 
@@ -12,6 +12,3 @@ Development
 Production
 
 `$ clj -A:prod`
-
-
-![Image](resources/myyoutube.png)

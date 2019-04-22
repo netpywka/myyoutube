@@ -25,8 +25,9 @@
 (defn edit-button [data]
   [c/touchable {:on-press #(re-frame/dispatch [:edit-item data])} "⚙️"])
 
-(defn refresh-button [data]
-  [c/touchable {:on-press #(re-frame/dispatch [:get-api-for-item data])} "\uD83D\uDD04"])
+(defn refresh-button [{:keys [refresh?] :as data}]
+  [:div {:style {:opacity (if refresh? 0.5 1)}}
+   [c/touchable {:on-press #(re-frame/dispatch [:get-api-for-item data])} "\uD83D\uDD04"]])
 
 (defn list-of-videos [items oppo-color block? {:keys [name compact?] :as data}]
   (let [{:keys [w]} (get-w-h compact?)]

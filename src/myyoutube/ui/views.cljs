@@ -8,12 +8,13 @@
 
 (defview filter-view []
   (letsubs [filter [:storage/filter]]
-    [c/button {:on-press #(re-frame/dispatch [:set :settings-form {:type :filters :title "Blocked channels"}])}
+    [c/button {:on-press #(re-frame/dispatch [:set :settings-form {:type :filters :title "Blocked channels"}])
+               :style {:padding 2}}
      (count filter)]))
 
 (defview quota-view [oppo-color]
   (letsubs [{:keys [number]} [:storage/quota]]
-    [c/view {:margin-top 10 :margin-bottom 10 :margin-left 20 :color oppo-color}
+    [c/view {:margin-left 20 :color oppo-color}
      "Used quota: " (or number "0") " of 10000 / day"]))
 
 (defview main-view []
@@ -24,24 +25,25 @@
             initialization-failed [:get :initialization-failed]
             color                 [:color]
             oppo-color            [:oppo-color]]
-    [c/view {:flex 1 :padding 10 :background-color color}
+    [c/view {:flex 1 :padding-left 5 :padding-right 5 :background-color color}
      (if signed-in?
        [c/view {:flex 1}
         [c/view {:flex-direction :row :align-items :center}
-         [:img {:src "parsley.png" :height 50}]
-         [c/view {:margin-top 10 :margin-bottom 10 :margin-left 10 :color oppo-color} "Blocked channels: "]
-         [filter-view]
-         [quota-view oppo-color]
-         [c/view {:flex 1}]
+         [c/touchable {:on-press #(js/window.open "https://github.com/netpywka/myyoutube" "_blank")}
+          [:img {:src "parsley.png" :height 30}]]
+         [c/touchable {:on-press #(re-frame/dispatch [:set-in [:storage :bg] (not bg)])}
+          [c/view {:flex         1 :background-color oppo-color :border-radius "4px" :padding 2 :color oppo-color
+                   :margin-left 10}
+           "C"]]
          [c/button {:on-press #(re-frame/dispatch [:set :settings-form {:type  :add-new
                                                                         :title "Add new"
                                                                         :data  {:type :popular :country "AF"}}])
-                    :style    {:margin-right 20}} "+"]
-         [c/touchable {:on-press #(re-frame/dispatch [:set-in [:storage :bg] (not bg)])}
-          [c/view {:flex         1 :background-color oppo-color :border-radius "4px" :padding 5 :color oppo-color
-                   :margin-right 10}
-           "C"]]
-         [c/button {:on-press #(api/sing-out)} "Sign out"]]
+                    :style    {:margin-left 20 :padding 2}} " + "]
+         [c/view {:margin-left 10 :color oppo-color} "Blocked channels: "]
+         [filter-view]
+         [quota-view oppo-color]
+         [c/view {:flex 1}]
+         [c/button {:on-press #(api/sing-out) :style {:padding 2}} "Sign out"]]
         [items/items-view]]
        [c/view {:align-items :center :justify-content :center :flex 1}
         (if client-id

@@ -179,8 +179,8 @@
 
 (re-frame/reg-event-fx
  :check-subscriptions
- (fn [{db :db} _]
-   (when-not (get-in db [:api :subscriptions])
+ (fn [{db :db} [_ force?]]
+   (when (or force? (not (get-in db [:api :subscriptions])))
      {:api-get-subscriptions nil})))
 
 (re-frame/reg-event-fx

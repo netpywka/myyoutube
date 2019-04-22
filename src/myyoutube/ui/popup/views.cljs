@@ -21,15 +21,21 @@
 
 (defview add-subsscriptions [new? {:keys [channels]}]
   (letsubs [oppo-color [:oppo-color]
-            subscriptions [:get-in [:storage :api :subscriptions]]]
+            subscriptions [:subs-with-items]]
     [c/view {:margin-top 10 :flex 1 :overflow :auto}
-     (for [{:keys [title channel-id thumb]} subscriptions]
+     [c/view {:flex-direction :row :justify-content :flex-end}
+      [c/button {:on-press #(re-frame/dispatch [:check-subscriptions true]) :style {:padding 2}} "Refresh"]]
+     (for [{:keys [title channel-id thumb items]} subscriptions]
        ^{:key title}
-       [c/view {:flex-direction :row :align-items :center}
+       [c/view {:flex-direction :row :align-items :center :margin-top 5}
         [:input {:type :checkbox :default-checked (boolean (get channels channel-id))
                  :on-click #(re-frame/dispatch [:subscription-item channel-id (get-check %)])}]
-        [:img {:src thumb}]
-        [:div {:style {:color oppo-color}} title]])]))
+        [:img {:src thumb :style {:height 60}}]
+        [c/view {:margin-left 10}
+         [:div {:style {:color oppo-color}} title]
+         [c/view {:flex-direction :row :align-items :center :flex-wrap :wrap}
+          (for [{:keys [name]} items]
+            [:div {:style {:color "#9ccc7a" :margin-right 5}} name])]]])]))
 
 (defn item-type-options [new? {:keys [type country]} oppo-color]
   (if new?
@@ -83,9 +89,11 @@
 (defview popup []
   (letsubs [{:keys [type data title] :as form} [:get :settings-form]
             color  [:color]
-            oppo-color [:oppo-color]]
+            oppo-color [:oppo-color]
+            bg      [:storage/bg]]
     (when form
-      [c/view {:position    :absolute :left 0 :right 0 :top 0 :bottom 0 :background-color "rgba(0, 0, 0, 0.4)"
+      [c/view {:position    :absolute :left 0 :right 0 :top 0 :bottom 0
+               :background-color (if bg "rgba(255, 255, 255, 0.3)" "rgba(0, 0, 0, 0.5)")
                :align-items :center :justify-content :center}
        [c/view {:background-color color :border-radius 4 :margin 50}
         [c/view {:flex-direction :row :align-items :center :padding-left 10}
