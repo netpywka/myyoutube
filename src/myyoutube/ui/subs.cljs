@@ -24,7 +24,7 @@
  (fn [[_ code] _]
    [(re-frame/subscribe [:get-api-by-code [:popular code]])
     (re-frame/subscribe [:storage/filter])])
- (fn [[popular filter ] _]
+ (fn [[popular filter] _]
    (if (empty? filter)
      popular
      (remove #(filter (:channel-id %)) popular))))
@@ -104,3 +104,13 @@
  :<- [:items-subs]
  (fn [[subs items] _]
    (map #(assoc % :items (get-items (:channel-id %) items)) subs)))
+
+(re-frame/reg-sub
+ :popular-loading
+ (fn [db [_ code]]
+   (get-in db [:loading :popular code])))
+
+(re-frame/reg-sub
+ :channels-loading
+ (fn [db [_ id]]
+   (get-in db [:loading :channels id])))

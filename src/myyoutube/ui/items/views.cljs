@@ -20,22 +20,28 @@
        [:div {:style {:font-weight :normal :font-size 13 :color oppo-color}} title]]
       [c/view {:flex 1}]
       (when block?
-        [c/touchable {:on-press #(re-frame/dispatch [:block-channel channel-id])} "🚫"])]]))
+        [c/touchable {:on-press #(re-frame/dispatch [:block-channel channel-id])}
+         [:img {:src "./assets/block.svg" :width 12 :height 12}]])]]))
 
 (defn edit-button [data]
-  [c/touchable {:on-press #(re-frame/dispatch [:edit-item data])} "⚙️"])
+  [c/touchable {:on-press #(re-frame/dispatch [:edit-item data])}
+   [:img {:src "./assets/menu.svg" :width 15 :height 15}]])
 
 (defn refresh-button [{:keys [refresh?] :as data}]
   [:div {:style {:opacity (if refresh? 0.5 1)}}
-   [c/touchable {:on-press #(re-frame/dispatch [:get-api-for-item data])} "\uD83D\uDD04"]])
+   [c/touchable {:on-press #(re-frame/dispatch [:get-api-for-item data])}
+    [:img {:src "./assets/refresh.svg" :width 15 :height 15}]]])
 
-(defn list-of-videos [items oppo-color block? {:keys [name compact?] :as data}]
+(defn list-of-videos [items oppo-color block? {:keys [name compact?] :as data} loading?]
   (let [{:keys [w]} (get-w-h compact?)]
     [c/view {:margin-right 10 :padding-top 10}
+     (when loading?
+       [c/view {:align-items :center}
+        [:div {:class :loader}]])
      [c/view {:flex-direction :row :align-items :center :max-width w :justify-content :space-between}
-      [edit-button data]
+      [refresh-button data]
       [:div {:style {:color oppo-color :font-size 15 :font-weight :bold}} name " " (count items)]
-      [refresh-button data]]
+      [edit-button data]]
      [c/view {:overflow-y :scroll :padding-right 15}
       (for [{:keys [id] :as item} items]
         ^{:key (str id item)}
@@ -43,13 +49,15 @@
 
 (defview popular [{:keys [country] :as data}]
   (letsubs [items      [:popular-filtered-seen country]
+            loading?   [:popular-loading country]
             oppo-color [:oppo-color]]
-    [list-of-videos items oppo-color true data]))
+    [list-of-videos items oppo-color true data loading?]))
 
 (defview subscr [{:keys [id] :as data}]
   (letsubs [items      [:sorted-playlists-seen id]
+            loading?   [:channels-loading id]
             oppo-color [:oppo-color]]
-    [list-of-videos items oppo-color false data]))
+    [list-of-videos items oppo-color false data loading?]))
 
 (defview items-view []
   (letsubs [items [:storage/items]]

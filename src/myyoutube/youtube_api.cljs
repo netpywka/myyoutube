@@ -43,7 +43,9 @@
     :params   {"mine"       "true"
                "part"       "snippet"
                "maxResults" "50"}
-    :callback #(re-frame/dispatch [:store-subscriptions %])}))
+    :callback #(do
+                 (re-frame/dispatch [:set-in [:loading :subscriptions] false])
+                 (re-frame/dispatch [:store-subscriptions %]))}))
 
 (defn popular [code]
   (request-all-list
@@ -53,7 +55,9 @@
                "regionCode" code
                "part"       "snippet"
                "maxResults" "50"}
-    :callback #(re-frame/dispatch [:store-api [:popular code] %])}))
+    :callback #(do
+                 (re-frame/dispatch [:set-in [:loading :popular code] false])
+                 (re-frame/dispatch [:store-api [:popular code] %]))}))
 
 (defn channels [id items]
   (re-frame/dispatch [:update-quota (* (count items) 3)])
@@ -84,5 +88,7 @@
                    :params   {"id"   (string/join "," (take 50 video-ids))
                               "part" "snippet"}
                    :callback (fn [videos]
-                               (re-frame/dispatch [:store-api [:playlists id] videos]))
+                               (do
+                                 (re-frame/dispatch [:set-in [:loading :channels id] false])
+                                 (re-frame/dispatch [:store-api [:playlists id] videos])))
                    :once?    true}))))))

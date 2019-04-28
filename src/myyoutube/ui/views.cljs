@@ -14,8 +14,14 @@
 
 (defview quota-view [oppo-color]
   (letsubs [{:keys [number]} [:storage/quota]]
-    [c/view {:margin-left 20 :color oppo-color}
-     "Used quota: " (or number "0") " of 10000 / day"]))
+    (when number
+      [c/view {:margin-left 20 :color oppo-color}
+       "quota: " (int (- 100 (/ number 100))) "%"])))
+
+(defn refresh-button []
+  [c/view {:margin-left 10}
+   [c/touchable {:on-press #(re-frame/dispatch [:get-api])}
+    [:img {:src "./assets/refresh.svg" :width 16 :height 16}]]])
 
 (defview main-view []
   (letsubs [client-id             [:storage/client-id]
@@ -39,9 +45,10 @@
                                                                         :title "Add new"
                                                                         :data  {:type :popular :country "AF"}}])
                     :style    {:margin-left 20 :padding 2}} " + "]
-         [c/view {:margin-left 10 :color oppo-color} "Blocked channels: "]
+         [c/view {:margin-left 10 :color oppo-color} "blocked: "]
          [filter-view]
          [quota-view oppo-color]
+         [refresh-button]
          [c/view {:flex 1}]
          [c/button {:on-press #(api/sing-out) :style {:padding 2}} "Sign out"]]
         [items/items-view]]

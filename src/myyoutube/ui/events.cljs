@@ -61,18 +61,21 @@
 
 (re-frame/reg-event-fx
  :get-popular
- (fn [_ [_ code]]
-   {:api-get-popular code}))
+ (fn [{db :db} [_ code]]
+   {:db (assoc-in db [:loading :popular code] true)
+    :api-get-popular code}))
 
 (re-frame/reg-event-fx
  :get-subscriptions
- (fn [_ _]
-   {:api-get-subscriptions nil}))
+ (fn [{db :db} _]
+   {:db (assoc-in db [:loading :subscriptions] true)
+    :api-get-subscriptions nil}))
 
 (re-frame/reg-event-fx
  :get-channels
- (fn [_ [_ id channels]]
-   {:api-get-channels [id channels]}))
+ (fn [{db :db} [_ id channels]]
+   {:db (assoc-in db [:loading :channels id] true)
+    :api-get-channels [id channels]}))
 
 (re-frame/reg-event-fx
  :get-api
