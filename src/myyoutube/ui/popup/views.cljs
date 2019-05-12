@@ -59,7 +59,7 @@
     [c/view {:flex-direction :row :padding-bottom 10}
      [:input {:type :checkbox :default-checked dont-refresh?
               :on-click #(re-frame/dispatch [:set-in [:settings-form :data :dont-refresh?] (get-check %)])}]
-     [:div {:style {:color oppo-color :padding-right 10}} "Don't request on page load"]]
+     [:div {:style {:color oppo-color :padding-right 10}} "Manual refresh"]]
     [c/view {:flex-direction :row :padding-bottom 10}
      [:input {:type :checkbox :default-checked compact?
               :on-click #(re-frame/dispatch [:set-in [:settings-form :data :compact?] (get-check %)])}]

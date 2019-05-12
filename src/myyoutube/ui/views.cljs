@@ -20,7 +20,9 @@
 
 (defn refresh-button []
   [c/view {:margin-left 10}
-   [c/touchable {:on-press #(re-frame/dispatch [:get-api])}
+   [c/touchable {:on-press #(do
+                              (re-frame/dispatch [:init-quota])
+                              (re-frame/dispatch [:get-api]))}
     [:img {:src "./assets/refresh.svg" :width 16 :height 16}]]])
 
 (defview main-view []
@@ -33,7 +35,7 @@
             oppo-color            [:oppo-color]]
     [c/view {:flex 1 :padding-left 5 :padding-right 5 :background-color color}
      (if signed-in?
-       [c/view {:flex 1}
+       [c/view {:flex 1 :max-height "100%"}
         [c/view {:flex-direction :row :align-items :center}
          [c/touchable {:on-press #(js/window.open "https://github.com/netpywka/myyoutube" "_blank")}
           [:img {:src "parsley.png" :height 30}]]
