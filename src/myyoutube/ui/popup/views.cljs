@@ -96,7 +96,7 @@
                :background-color (if bg "rgba(255, 255, 255, 0.3)" "rgba(0, 0, 0, 0.5)")
                :align-items :center :justify-content :center}
        [c/view {:background-color color :border-radius 4 :margin 50}
-        [c/view {:flex-direction :row :align-items :center :padding-left 10}
+        [c/view {:flex-direction :row :align-items :center :padding-left 10 :max-height "100%"}
          [:div {:style {:font-weight :bold :color oppo-color}} title]
          [c/view {:flex 1}]
          [c/button {:on-press #(re-frame/dispatch [:set :settings-form nil])} "x"]]

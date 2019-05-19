@@ -8,6 +8,10 @@
         h (if compact? (/ 180 1.5) 180)]
     {:w w :h h}))
 
+(defn seen-button [data]
+  [c/touchable {:on-press #(re-frame/dispatch [:seen-item data])}
+   [:img {:src "./assets/eye.svg" :width 15 :height 15}]])
+
 (defn video-item [{:keys [id thumb channel-id channel-title title seen?]}
                   oppo-color block? {:keys [compact?]}]
   (let [{:keys [w h]} (get-w-h compact?)]
@@ -15,6 +19,8 @@
      [c/touchable {:on-press #(re-frame/dispatch [:open-video id])}
       [:img {:src thumb :width w :height h}]]
      [c/view {:flex-direction :row :max-width w}
+      [:div {:style {:margin-right 5 :opacity (if seen? 0.5 1)}}
+       [seen-button id]]
       [:div {:style {:font-weight :bold :font-size 13 :color oppo-color}}
        channel-title
        [:div {:style {:font-weight :normal :font-size 13 :color oppo-color}} title]]

@@ -62,19 +62,19 @@
 (re-frame/reg-event-fx
  :get-popular
  (fn [{db :db} [_ code]]
-   {:db (assoc-in db [:loading :popular code] true)
+   {:db              (assoc-in db [:loading :popular code] true)
     :api-get-popular code}))
 
 (re-frame/reg-event-fx
  :get-subscriptions
  (fn [{db :db} _]
-   {:db (assoc-in db [:loading :subscriptions] true)
+   {:db                    (assoc-in db [:loading :subscriptions] true)
     :api-get-subscriptions nil}))
 
 (re-frame/reg-event-fx
  :get-channels
  (fn [{db :db} [_ id channels]]
-   {:db (assoc-in db [:loading :channels id] true)
+   {:db               (assoc-in db [:loading :channels id] true)
     :api-get-channels [id channels]}))
 
 (re-frame/reg-event-fx
@@ -191,22 +191,30 @@
  (fn [{db :db} [_ ch-id selected?]]
    {:db (update-in db [:settings-form :data :channels] (if selected? assoc dissoc) ch-id "")}))
 
+(defn seen-item [db id]
+  (update-in db [db/storage-key :seen] conj id))
+
 (re-frame/reg-event-fx
  :open-video
  (fn [{db :db} [_ id]]
-   {:db            (update-in db [db/storage-key :seen] conj id)
+   {:db            (seen-item db id)
     :open-video-fx id}))
 
 (re-frame/reg-event-fx
-  :store-subscriptions
-  (fn [{db :db} [_ items]]
-    {:db (assoc-in db
-                   [db/storage-key :api :subscriptions]
-                   (map (fn [value]
-                          {:title (get-in value [:snippet :title])
-                           :channel-id (get-in value [:snippet :resourceId :channelId])
-                           :thumb (get-in value [:snippet :thumbnails :default :url])})
-                        items))}))
+ :seen-item
+ (fn [{db :db} [_ id]]
+   {:db (seen-item db id)}))
+
+(re-frame/reg-event-fx
+ :store-subscriptions
+ (fn [{db :db} [_ items]]
+   {:db (assoc-in db
+                  [db/storage-key :api :subscriptions]
+                  (map (fn [value]
+                         {:title      (get-in value [:snippet :title])
+                          :channel-id (get-in value [:snippet :resourceId :channelId])
+                          :thumb      (get-in value [:snippet :thumbnails :default :url])})
+                       items))}))
 
 (re-frame/reg-event-fx
  :store-api
@@ -214,10 +222,10 @@
    {:db (assoc-in db
                   (into [] (concat [db/storage-key :api] path))
                   (map (fn [value]
-                         {:id (get value :id)
-                          :published-at (get-in value [:snippet :publishedAt])
-                          :thumb (get-in value [:snippet :thumbnails :medium :url])
+                         {:id            (get value :id)
+                          :published-at  (get-in value [:snippet :publishedAt])
+                          :thumb         (get-in value [:snippet :thumbnails :medium :url])
                           :channel-title (get-in value [:snippet :channelTitle])
-                          :channel-id (get-in value [:snippet :channelId])
-                          :title  (get-in value [:snippet :title])})
+                          :channel-id    (get-in value [:snippet :channelId])
+                          :title         (get-in value [:snippet :title])})
                        items))}))
