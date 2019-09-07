@@ -40,7 +40,7 @@
 
 (defn list-of-videos [items oppo-color block? {:keys [name compact?] :as data} loading?]
   (let [{:keys [w]} (get-w-h compact?)]
-    [c/view {:margin-right 10 :padding-top 10}
+    [c/view {:margin-right 10 :padding-top 10 :height "100%"}
      (when loading?
        [c/view {:align-items :center}
         [:div {:class :loader}]])
@@ -67,7 +67,7 @@
 
 (defview items-view []
   (letsubs [items [:storage/items]]
-    [c/view {:flex-direction :row :flex 1 :overflow :hidden :overflow-x :scroll}
+    [c/view {:flex-direction :row :flex 1 :overflow :hidden :overflow-x :scroll :height "100%"}
      (for [{:keys [type id] :as data} (vals items)]
        (case type
          :popular ^{:key id} [popular data]

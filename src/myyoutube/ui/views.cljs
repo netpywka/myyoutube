@@ -9,7 +9,7 @@
 (defview filter-view []
   (letsubs [filter [:storage/filter]]
     [c/button {:on-press #(re-frame/dispatch [:set :settings-form {:type :filters :title "Blocked channels"}])
-               :style {:padding 2}}
+               :style    {:padding 2}}
      (count filter)]))
 
 (defview quota-view [oppo-color]
@@ -33,14 +33,14 @@
             initialization-failed [:get :initialization-failed]
             color                 [:color]
             oppo-color            [:oppo-color]]
-    [c/view {:flex 1 :padding-left 5 :padding-right 5 :background-color color}
+    [c/view {:flex 1 :padding-left 5 :padding-right 5 :background-color color :height "100%"}
      (if signed-in?
-       [c/view {:flex 1 :max-height "100%"}
+       [c/view {:flex 1 :height "100%"}
         [c/view {:flex-direction :row :align-items :center}
          [c/touchable {:on-press #(js/window.open "https://github.com/netpywka/myyoutube" "_blank")}
           [:img {:src "parsley.png" :height 30}]]
          [c/touchable {:on-press #(re-frame/dispatch [:set-in [:storage :bg] (not bg)])}
-          [c/view {:flex         1 :background-color oppo-color :border-radius "4px" :padding 2 :color oppo-color
+          [c/view {:flex        1 :background-color oppo-color :border-radius "4px" :padding 2 :color oppo-color
                    :margin-left 10}
            "C"]]
          [c/button {:on-press #(re-frame/dispatch [:set :settings-form {:type  :add-new
@@ -68,7 +68,9 @@
                [c/view {:padding-right 5 :padding-left 5} " or "]
                [c/button {:on-press #(re-frame/dispatch [:init-client])} "Init client"]]
               [:img {:src "parsley.png" :height 150}]))
-          [:input {:type      :text :placeholder "Paste Goodle API CLIENT ID here"
-                   :on-change #(do (re-frame/dispatch [:ls/store :client-id (.-value (.-target %))])
-                                   (re-frame/dispatch [:set :initialization-failed true]))}])])
+          [:input {:style       {:width "500px"}
+                   :type        :text
+                   :placeholder "Paste Goodle API CLIENT ID here"
+                   :on-change   #(do (re-frame/dispatch [:ls/store :client-id (.-value (.-target %))])
+                                     (re-frame/dispatch [:set :initialization-failed true]))}])])
      [popup/popup]]))

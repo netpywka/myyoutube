@@ -22,20 +22,21 @@
 (defview add-subsscriptions [new? {:keys [channels]}]
   (letsubs [oppo-color [:oppo-color]
             subscriptions [:subs-with-items]]
-    [c/view {:margin-top 10 :flex 1 :overflow :auto}
+    [c/view {:margin-top 10 :height "100%"}
      [c/view {:flex-direction :row :justify-content :flex-end}
       [c/button {:on-press #(re-frame/dispatch [:check-subscriptions true]) :style {:padding 2}} "Refresh"]]
-     (for [{:keys [title channel-id thumb items]} subscriptions]
-       ^{:key title}
-       [c/view {:flex-direction :row :align-items :center :margin-top 5}
-        [:input {:type :checkbox :default-checked (boolean (get channels channel-id))
-                 :on-click #(re-frame/dispatch [:subscription-item channel-id (get-check %)])}]
-        [:img {:src thumb :style {:height 60}}]
-        [c/view {:margin-left 10}
-         [:div {:style {:color oppo-color}} title]
-         [c/view {:flex-direction :row :align-items :center :flex-wrap :wrap}
-          (for [{:keys [name]} items]
-            [:div {:style {:color "#9ccc7a" :margin-right 5}} name])]]])]))
+     [c/view {:height "100%" :overflow-y :scroll}
+      (for [{:keys [title channel-id thumb items]} subscriptions]
+        ^{:key title}
+        [c/view {:flex-direction :row :align-items :center :margin-top 5}
+         [:input {:type :checkbox :default-checked (boolean (get channels channel-id))
+                  :on-click #(re-frame/dispatch [:subscription-item channel-id (get-check %)])}]
+         [:img {:src thumb :style {:height 60}}]
+         [c/view {:margin-left 10}
+          [:div {:style {:color oppo-color}} title]
+          [c/view {:flex-direction :row :align-items :center :flex-wrap :wrap}
+           (for [{:keys [name]} items]
+             [:div {:style {:color "#9ccc7a" :margin-right 5}} name])]]])]]))
 
 (defn item-type-options [new? {:keys [type country]} oppo-color]
   (if new?
@@ -51,7 +52,7 @@
     [:div {:style {:color oppo-color }} (if (= type :popular) (str "Popular " country) "Subscriptions")]))
 
 (defn add-edit-view [new? {:keys [type name dont-refresh? compact?] :as data} oppo-color]
-  [c/view {:margin 30}
+  [c/view {:margin 30 :height "100%"}
    [c/view {:margin-top 10}
     [c/view {:flex-direction :row :padding-bottom 10}
      [:div {:style {:color oppo-color :padding-right 10}} "Name"]
@@ -95,8 +96,8 @@
       [c/view {:position    :absolute :left 0 :right 0 :top 0 :bottom 0
                :background-color (if bg "rgba(255, 255, 255, 0.3)" "rgba(0, 0, 0, 0.5)")
                :align-items :center :justify-content :center}
-       [c/view {:background-color color :border-radius 4 :margin 50}
-        [c/view {:flex-direction :row :align-items :center :padding-left 10 :max-height "100%"}
+       [c/view {:background-color color :border-radius 4 :margin 50 :height "100%" :width "500px"}
+        [c/view {:flex-direction :row :align-items :center :padding-left 10}
          [:div {:style {:font-weight :bold :color oppo-color}} title]
          [c/view {:flex 1}]
          [c/button {:on-press #(re-frame/dispatch [:set :settings-form nil])} "x"]]
