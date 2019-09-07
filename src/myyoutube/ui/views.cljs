@@ -55,6 +55,9 @@
          [c/button {:on-press #(api/sing-out) :style {:padding 2}} "Sign out"]]
         [items/items-view]]
        [c/view {:align-items :center :justify-content :center :flex 1}
+        [:iframe {:width "660" :height "415" :src "https://www.youtube.com/embed/77y7_ftGedM" :frameborder "0"
+                  :allow "accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" :allowfullscreen "true"}]
+        [c/view {:height 50}]
         (if client-id
           (if initialized?
             [c/view {:flex-direction :row :align-items :center}
@@ -70,7 +73,9 @@
               [:img {:src "parsley.png" :height 150}]))
           [:input {:style       {:width "500px"}
                    :type        :text
-                   :placeholder "Paste Goodle API CLIENT ID here"
+                   :placeholder "To start paste Youtube API CLIENT ID here"
                    :on-change   #(do (re-frame/dispatch [:ls/store :client-id (.-value (.-target %))])
-                                     (re-frame/dispatch [:set :initialization-failed true]))}])])
+                                     (re-frame/dispatch [:set :initialization-failed true]))}])
+        [c/view {:height 20}]
+        [:a {:href "https://www.youtube.com/watch?v=pP4zvduVAqo" :target "_blank"} "How To Create YouTube API Key"]])
      [popup/popup]]))
