@@ -15,17 +15,49 @@
 <script src="js/main.js" type="text/javascript"></script>
 
 <script type="text/javascript">
-      myyoutube.core.init();
 
-      function handleClientLoad() {
-        gapi.load('client:auth2', myyoutube.core.initClient);
-      }
+    const gapiLoadPromise = new Promise((resolve, reject) => {
+      gapiLoadOkay = resolve;
+      gapiLoadFail = reject;
+    });
+    const gisLoadPromise = new Promise((resolve, reject) => {
+      gisLoadOkay = resolve;
+      gisLoadFail = reject;
+    });
+
+    myyoutube.core.init();
+
+    var tokenClient;
+
+    (async () => {
+      // First, load and initialize the gapi.client
+      await gapiLoadPromise;
+      await new Promise((resolve, reject) => {
+        // NOTE: the 'auth2' module is no longer loaded.
+        gapi.load('client', {callback: resolve, onerror: reject});
+      });
+      await gapi.client.init({
+        // NOTE: OAuth2 'scope' and 'client_id' parameters have moved to initTokenClient().
+      })
+      .then(function() {  // Load the Calendar API discovery document.
+        gapi.client.load('https://www.googleapis.com/discovery/v1/apis/youtube/v3/rest');
+      });
+
+      // Now load the GIS client
+      await gisLoadPromise;
+      await new Promise((resolve, reject) => {
+        try {
+          myyoutube.core.initClient();
+          resolve();
+        } catch (err) {
+          reject(err);
+        }
+      });
+    })();
 </script>
 
-<script async defer src="https://apis.google.com/js/api.js"
-        onload="this.onload=function(){};handleClientLoad()"
-        onreadystatechange="if (this.readyState === 'complete') this.onload()">
-</script>
+<script async defer src="https://apis.google.com/js/api.js" onload="gapiLoadOkay()"></script>
+<script async defer src="https://accounts.google.com/gsi/client" onload="gisLoadOkay()"></script>
 
 </body>
 </html>

@@ -4,25 +4,29 @@
             [cljs-time.format :as format]
             [clojure.string :as string]))
 
-(defn auth-instance []
-  (.getAuthInstance js/gapi.auth2))
+(def API-KEY "")
+
+(def token-client (atom nil))
+(def access-token (atom nil))
 
 (defn init [client-id update-sign-status]
-  (-> (.init js/gapi.client
-             (clj->js {:discoveryDocs ["https://www.googleapis.com/discovery/v1/apis/youtube/v3/rest"]
-                       :clientId      client-id
-                       :scope         "https://www.googleapis.com/auth/youtube.readonly"}))
-      (.then (fn []
-               (let [signed-in? (.-isSignedIn (auth-instance))]
-                 (.listen signed-in? update-sign-status)
-                 (update-sign-status (.get signed-in?)))))
-      (.catch #(re-frame/dispatch [:set :initialization-failed true]))))
+  (reset! token-client (.initTokenClient js/google.accounts.oauth2
+                                         (clj->js {:client_id     client-id
+                                                   :scope         "https://www.googleapis.com/auth/youtube.readonly"
+                                                   :callback      (fn [resp]
+                                                                    (reset! access-token (.-access_token resp))
+                                                                    (update-sign-status true))})))
+  (if-let [token (.getToken js/gapi.client)]
+    (do
+      (reset! access-token token)
+      (update-sign-status true))
+    (.requestAccessToken @token-client)))
 
-(defn sing-in []
-  (.signIn (auth-instance)))
+(defn sing-in [])
+  ;(.signIn (auth-instance)))
 
-(defn sing-out []
-  (.signOut (auth-instance)))
+(defn sing-out [])
+  ;(.signOut (auth-instance)))
 
 (defn request-all-list [{:keys [api params items callback once? quota] :or {items []} :as obj}]
   (re-frame/dispatch [:update-quota quota])
@@ -42,7 +46,8 @@
     :quota    3
     :params   {"mine"       "true"
                "part"       "snippet"
-               "maxResults" "50"}
+               "maxResults" "50"
+               "key"        API-KEY}
     :callback #(do
                  (re-frame/dispatch [:set-in [:loading :subscriptions] false])
                  (re-frame/dispatch [:store-subscriptions %]))}))
@@ -54,10 +59,15 @@
     :params   {"chart"      "mostPopular"
                "regionCode" code
                "part"       "snippet"
-               "maxResults" "50"}
+               "maxResults" "50"
+               "key"        API-KEY}
     :callback #(do
                  (re-frame/dispatch [:set-in [:loading :popular code] false])
                  (re-frame/dispatch [:store-api [:popular code] %]))}))
+
+(defn sanitize-time [s]
+  (-> (string/trim s)
+      (string/replace #"[\s\n]+" "")))
 
 (defn channels [id items]
   (re-frame/dispatch [:update-quota (* (count items) 3)])
@@ -65,19 +75,20 @@
         (doseq [channel-id items]
           (.add batch (.list js/gapi.client.youtube.playlistItems #js {"playlistId" (str "UU" (subs channel-id 2))
                                                                        "maxResults" 5
-                                                                       "part"       "contentDetails"})))
+                                                                       "part"       "contentDetails"
+                                                                       "key"        API-KEY})))
         batch)
       (.then (fn [result]
-               (let [;;TODO weird bug, it doesn't want to convert js object to cljs directly
-                     play-lists                   (vals (js->clj (js/JSON.parse (js/JSON.stringify (aget result "result")))
-                                                                 :keywordize-keys true))
+               (let [play-lists                   (vals (js->clj (aget result "result") :keywordize-keys true))
                      videos                       (flatten (map #(get-in % [:result :items]) play-lists))
                      week                         (time/minus (time/now) (time/weeks 1))
+                     videos                       (map #(update-in % [:contentDetails :videoPublishedAt] sanitize-time) videos)
                      last-week-videos             (filter (fn [{:keys [contentDetails]}]
-                                                            (let [pushed (format/parse (format/formatters :date-time) (:videoPublishedAt contentDetails))]
+                                                            (let [pushed (format/parse (format/formatters :date-time-no-ms)
+                                                                                       (:videoPublishedAt contentDetails))]
                                                               (time/after? pushed week)))
                                                           videos)
-                     sorted-by-upload-time-videos (sort-by #(format/parse (format/formatters :date-time)
+                     sorted-by-upload-time-videos (sort-by #(format/parse (format/formatters :date-time-no-ms)
                                                                           (get-in % [:contentDetails :videoPublishedAt]))
                                                            time/after?
                                                            last-week-videos)

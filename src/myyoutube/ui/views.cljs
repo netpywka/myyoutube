@@ -55,8 +55,8 @@
          [c/button {:on-press #(api/sing-out) :style {:padding 2}} "Sign out"]]
         [items/items-view]]
        [c/view {:align-items :center :justify-content :center :flex 1}
-        [:iframe {:width "660" :height "415" :src "https://www.youtube.com/embed/77y7_ftGedM" :frameborder "0"
-                  :allow "accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" :allowfullscreen "true"}]
+        [:iframe {:width "660" :height "415" :src "https://www.youtube.com/embed/77y7_ftGedM" :frameBorder "0"
+                  :allow "accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" :allowFullScreen "true"}]
         [c/view {:height 50}]
         (if client-id
           (if initialized?

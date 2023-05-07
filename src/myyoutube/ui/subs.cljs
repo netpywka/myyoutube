@@ -35,7 +35,16 @@
    [(re-frame/subscribe [:popular-filtered code])
     (re-frame/subscribe [:storage/seen])])
  (fn [[popular seen] _]
-   (map #(assoc % :seen? (seen (:id %))) popular)))
+   (->> popular
+        (map #(assoc % :seen? (seen (:id %))))
+        (sort-by :seen?))))
+
+(re-frame/reg-sub
+  :popular-filtered-unseen-count
+  (fn [[_ code] _]
+    [(re-frame/subscribe [:popular-filtered-seen code])])
+  (fn [[popular]]
+    (reduce #(if (:seen? %2) %1 (inc %1)) 0 popular)))
 
 (re-frame/reg-sub
  :subscriptions
@@ -60,7 +69,7 @@
  (fn [[_ id] _]
    [(re-frame/subscribe [:playlists-videos id])])
  (fn [[playlists] _]
-   (let [format (format/formatters :date-time)]
+   (let [format (format/formatters :date-time-no-ms)]
      (sort-by #(format/parse format (:published-at %))
               time/after?
               playlists))))

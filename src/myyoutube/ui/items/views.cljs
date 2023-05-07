@@ -38,7 +38,7 @@
    [c/touchable {:on-press #(re-frame/dispatch [:get-api-for-item data])}
     [:img {:src "./assets/refresh.svg" :width 15 :height 15}]]])
 
-(defn list-of-videos [items oppo-color block? {:keys [name compact?] :as data} loading?]
+(defn list-of-videos [items oppo-color block? {:keys [name compact?] :as data} loading? unseen]
   (let [{:keys [w]} (get-w-h compact?)]
     [c/view {:margin-right 10 :padding-top 10 :height "100%"}
      (when loading?
@@ -46,7 +46,7 @@
         [:div {:class :loader}]])
      [c/view {:flex-direction :row :align-items :center :max-width w :justify-content :space-between}
       [refresh-button data]
-      [:div {:style {:color oppo-color :font-size 15 :font-weight :bold}} name " " (count items)]
+      [:div {:style {:color oppo-color :font-size 15 :font-weight :bold}} name " " (count items) " / " unseen]
       [edit-button data]]
      [c/view {:overflow-y :scroll :padding-right 15}
       (for [{:keys [id] :as item} items]
@@ -55,15 +55,16 @@
 
 (defview popular [{:keys [country] :as data}]
   (letsubs [items      [:popular-filtered-seen country]
+            unseen     [:popular-filtered-unseen-count country]
             loading?   [:popular-loading country]
             oppo-color [:oppo-color]]
-    [list-of-videos items oppo-color true data loading?]))
+    [list-of-videos items oppo-color true data loading? unseen]))
 
 (defview subscr [{:keys [id] :as data}]
   (letsubs [items      [:sorted-playlists-seen id]
             loading?   [:channels-loading id]
             oppo-color [:oppo-color]]
-    [list-of-videos items oppo-color false data loading?]))
+    [list-of-videos items oppo-color false data loading? ""]))
 
 (defview items-view []
   (letsubs [items [:storage/items]]
